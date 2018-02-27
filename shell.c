@@ -70,9 +70,10 @@ char **split_line(char *line)
     exit(EXIT_FAILURE);
   }
 
-  token = strtok(line, " \t\r\n\a");
+  token = strtok(line, " \t\r\n\a&");
   while (token != NULL) {
     tokens[position] = token;
+        printf("%s\n",token);
     position++;
 
     if (position >= bufsize) {
@@ -84,7 +85,7 @@ char **split_line(char *line)
       }
     }
 
-    token = strtok(NULL, " \t\r\n\a");
+    token = strtok(NULL, " \t\r\n\a&");
   }
   tokens[position] = NULL;
   return tokens;
