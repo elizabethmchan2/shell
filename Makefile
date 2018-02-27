@@ -1,10 +1,10 @@
-all:	shell.o newshell.o
+all:	shell.o linkedlist.o
 
 shell.o:	shell.c
 	gcc shell.c -o shell
 
-newshell.o:	newshell.c
-	gcc newshell.c -o s -lreadline
+linkedlist.o:	linkedlist.c
+	gcc linkedlist.c -o link
 
 clean:
-	rm -rf shell s
+	rm -rf shell link
