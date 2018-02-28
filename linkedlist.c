@@ -11,22 +11,23 @@
 #include <stdio.h>
 #include <string.h>
 
+//each node is of typedef struct JOB
+typedef struct {
+  // pid_t job_id;
+  // char* name_id;
+  int status;
+
+}JOB;
+
 /* A linked list node */
-struct Node
-{
+struct Node{
     // Any data type can be stored in this node
     JOB job;
 
     struct Node *next;
 };
 
-//each node is of typedef struct JOB
-typdef struct JOB {
-  // pid_t job_id;
-  // char* name_id;
-  int status;
 
-}JOB;
 
 /* Function to add a node at the beginning of Linked List.
    This function expects a pointer to the data to be added
@@ -39,29 +40,55 @@ void push(struct Node** head_ref, JOB job, size_t data_size)
     new_node->job  = job;
     new_node->next = (*head_ref);
 
-    // // Copy contents of new_data to newly allocated memory.
-    // // Assumption: char takes 1 byte.
-    // int i;
-    // for (i=0; i<data_size; i++)
-    //     *(char *)(new_node->data + i) = *(char *)(new_data + i);
-
     // Change head pointer as new node is added at the beginning
     (*head_ref)    = new_node;
 }
 
+/* Given a reference (pointer to pointer) to the head of a list
+   and a key, deletes the first occurrence of key in linked list */
+void deleteNode(struct Node **head_ref, int key)
+{
+    // Store head node
+    struct Node* temp = *head_ref, *prev;
+
+    // If head node itself holds the key to be deleted
+    if (temp != NULL && temp->job.status == key)
+    {
+        *head_ref = temp->next;   // Changed head
+        free(temp);               // free old head
+        return;
+    }
+
+    // Search for the key to be deleted, keep track of the
+    // previous node as we need to change 'prev->next'
+    while (temp != NULL && temp->job.status  != key)
+    {
+        prev = temp;
+        temp = temp->next;
+    }
+
+    // If key was not present in linked list
+    if (temp == NULL) return;
+
+    // Unlink the node from linked list
+    prev->next = temp->next;
+
+    free(temp);  // Free memory
+}
+
+
 /* Function to print nodes in a given linked list. fpitr is used
    to access the function to be used for printing current node data.
    Note that different data types need different specifier in printf() */
-void printList(struct Node *node, void (*fptr)(void *))
-{
-  struct node *temp;
-  temp=start;
-  while(temp!=NULL)
-  {
-  printf("%d",temp->job);
-  temp=temp->next;
-  }
-}
+ void printList(struct Node *node, void (*fptr)(void *))
+ {
+     while (node != NULL)
+     {
+         printf("%d\n", node->job.status);
+         node = node->next;
+         // printf("%s\n",node);
+     }
+ }
 
 // Function to print an integer
 void printInt(void *n)
@@ -79,14 +106,17 @@ void printFloat(void *f)
 int main()
 {
     struct Node *start = NULL;
-
     // Create and print an int linked list
     unsigned int_size = sizeof(int);
-    // int arr[] = {10, 20, 30, 40, 50}, i;
-    // for (i=4; i>=0; i--)
-    JOB j;
-    j->status = 10;
-    push(&start, j, int_size);
+    JOB j1;
+    j1.status = 10;
+    push(&start, j1, int_size);
+    JOB j2;
+    j2.status = 40;
+    push(&start, j2, int_size);
+
+    printList(start, printInt);
+    deleteNode(&start, 10);
     printf("Created integer linked list is \n");
     printList(start, printInt);
 
