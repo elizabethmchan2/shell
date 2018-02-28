@@ -1,6 +1,3 @@
-
-// C program for generic linked list
-//pulled from https://www.geeksforgeeks.org/generic-linked-list-in-c-2/
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
@@ -11,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 //each node is of typedef struct JOB
 typedef struct {
@@ -93,7 +91,6 @@ void append(struct Node** head_ref, JOB job)
 
 
 
-
 /* Given a reference (pointer to pointer) to the head of a list
    and a key, deletes the first occurrence of key in linked list */
 void deleteNode(struct Node **head_ref, int key)
@@ -126,16 +123,31 @@ void deleteNode(struct Node **head_ref, int key)
     free(temp);  // Free memory
 }
 
+bool exists(struct Node **head_ref, int key) {
+  // int temp; //false
+  while (head != NULL) {
+    if (head->job.status!=key)  {
+        return 1; //true
+        // printf("job status %d\n",head->job.status);
 
-/* Function to print nodes in a given linked list. fpitr is used
-   to access the function to be used for printing current node data.
-   Note that different data types need different specifier in printf() */
+      // } else {
+      //
+        break; //doesn't delete first node, but still appends to the end
+
+      }
+      head = head->next;
+
+  }
+  return 0;
+}
+
+/* Function to print nodes in a given linked list.*/
  void printList(struct Node *node)
  {
      while (node != NULL)
      {
-         printf("%d\n", node->job.status);
-         node = node->next;
+        printf("%d\n", node->job.status);
+        node = node->next;
          // printf("%s\n",node);
      }
  }
@@ -155,43 +167,51 @@ void deleteNode(struct Node **head_ref, int key)
 int main()
 {
 
-    // Create and print an int linked list
-    JOB j1;
-    j1.job_id;
-    j1.status = 10;
-    append(&head, j1);
-    JOB j2;
-    j2.status = 40;
-    append(&head, j2);
+  // Create and print an int linked list
+  JOB j1;
+  // j1.job_id;
+  j1.status = 10;
+  append(&head, j1);
+  JOB j2;
+  j2.status = 40;
+  append(&head, j2);
+  JOB j3;
+  j3.status = 50;
+  append(&head, j3);
+  JOB j4;
+  j4.status = 60;
+  append(&head, j4);
+  JOB j5;
+  j5.status = 70;
+  append(&head, j5);
 
-    printList(head);
-    // deleteNode(&head, 10);
-    // printf("Created integer linked list is \n");
-    // printList(head);
+  // printList(head);
+  // deleteNode(&head, 10);
+  // printf("Created integer linked list is \n");
+  // printList(head);
 
-    // struct Node* check_node = head;
-    while (head != NULL)
-    {
-        //printf("%d\n", node->job.job_id);
-        printf("asdf\n" );
-      int status = 10;
-      if (head->job.status!=status)  {
-      //struct Node *start = NULL;
-        JOB j;
-        // j = create_job(getpid(), char* nameID, 0);
-        // struct Node* last = NULL;
-        // append(&last, j);
-        JOB j2;
-        j2.status = 50;
-        append(&head, j2);
-    }
-      head = head->next;
+  // struct Node* check_node = head;
+  // int status = 10;
+  int status = 10;
+  // int status = 40;
+  // printf("%d\n", );
 
+  if (exists(&head, status)==1) {
+    // struct Node *start = NULL;
+      // JOB j;
+      // // j = create_job(getpid(), char* nameID, 0);
+      // // struct Node* last = NULL;
+      // // append(&last, j);
+      JOB j3;
+      j3.status = status;
+      append(&head, j3);
 
-  } //should NOT add this job
-
-    printList(head);
+  }
 
 
-    return 0;
+
+  printList(head);
+
+
+  return 0;
 }
