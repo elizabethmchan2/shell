@@ -123,22 +123,22 @@ void deleteNode(struct Node **head_ref, int key)
     free(temp);  // Free memory
 }
 
-bool exists(struct Node **head_ref, int key) {
-  // int temp; //false
+int exists(struct Node **head_ref, int key) {
+  int temp=0;
   while (head != NULL) {
+    // printf("hello1\n");
     if (head->job.status!=key)  {
-        return 1; //true
-        // printf("job status %d\n",head->job.status);
-
-      // } else {
-      //
-        break; //doesn't delete first node, but still appends to the end
+      // printf("%d\n", head->job.status);
+        temp++;
+        // break; //doesn't delete first node, but still appends to the end
 
       }
       head = head->next;
 
   }
-  return 0;
+  printf("%d\n", temp);
+  return temp;
+
 }
 
 /* Function to print nodes in a given linked list.*/
@@ -196,7 +196,9 @@ int main()
   // int status = 40;
   // printf("%d\n", );
 
-  if (exists(&head, status)==1) {
+  if (exists(&head, status)==0) {
+    printf("hello\n");
+    // printf("%d\n", exists(&head, status));
     // struct Node *start = NULL;
       // JOB j;
       // // j = create_job(getpid(), char* nameID, 0);
