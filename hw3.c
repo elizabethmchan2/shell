@@ -13,7 +13,7 @@
 #include <signal.h>
 #include <sys/types.h>
 
-void backgrounding();
+void backgrounding(char** args);
 
 /******************************************/ //PARSING START
 
@@ -70,7 +70,7 @@ char *read_line(void){
       bufsize += INITIAL_BUFFER;
       buffer = realloc(buffer, bufsize);
       if (!buffer) {
-        fprintf(stderr, "lsh: allocation error\n");
+        fprintf(stderr, "error: allocation error\n");
         exit(EXIT_FAILURE);
       }
     }
@@ -86,15 +86,15 @@ char **split_line(char *line){
   char **tokens = malloc(bufsize * sizeof(char*));
   char *token;
 
-  char * pch;
-  pch=strchr(line,'&');
-  if (pch!=NULL) {
-    while (pch!=NULL) {
-      printf ("found at %ld\n",pch-line+1);
-      backgrounding();
-      pch=strchr(pch+1,'&');
-    }
-  } else {
+  // char * pch;
+  // pch=strchr(line,'&');
+  // if (pch!=NULL) {
+  //   while (pch!=NULL) {
+  //     printf ("found at %ld\n",pch-line+1);
+  //     goto_backgrounding();
+  //     pch=strchr(pch+1,'&');
+  //   }
+  // } else {
     if (!tokens) {
       fprintf(stderr, "error: allocation error\n");
       exit(EXIT_FAILURE);
@@ -116,7 +116,7 @@ char **split_line(char *line){
 
       token = strtok(NULL, " \t\r\n\a");
     }
-  }
+  // }
   tokens[position] = NULL;
   return tokens;
 
@@ -167,11 +167,14 @@ int execute(char **args){
 /******************************************/ //LINKED LIST STARTS
 
 JOB create_job(pid_t job_id, char* name_id) {
+  //, int status, int fg_or_bg
    JOB j;
    j.job_id = job_id;
    j.name_id = name_id;
-   //j.status = ?
+   // j.status = status;
+   // j.fg_or_bg = fg_or_bg;
    return j;
+
 } //create_job()
 
 // Add new job to end of linked list
@@ -236,14 +239,14 @@ void deleteNode(struct Node **head_ref, pid_t job_id){
 }
 
 /* Function to print nodes in a given linked list.*/
- void printList(struct Node *node){
-     while (node != NULL)
-     {
-        printf("%d\n", node->job.job_id);
-        node = node->next;
-         // printf("%s\n",node);
-     }
- }
+void printList(struct Node *node){
+   while (node != NULL)
+   {
+      printf("%d\n", node->job.job_id);
+      node = node->next;
+       // printf("%s\n",node);
+   }
+}
 
 /******************************************/ //LINKED LIST ENDS
 
@@ -262,7 +265,28 @@ void unblock(sigset_t sig){
   sigprocmask(SIG_UNBLOCK,&sig,NULL);
 } //unblock()
 
-void backgrounding(){ //! what does backgrounding takes in ?
+int goto_backgrounding(char* line) {
+  char * pch;
+  pch=strchr(line,'&');
+  if (pch!=NULL) {
+    while (pch!=NULL) {
+      printf ("found at %ld\n",pch-line+1);
+      pch=strchr(pch+1,'&');
+    }
+    return 1;
+  }
+  return 0;
+
+}
+
+
+void backgrounding(char** args){ //! what does backgrounding takes in ?
+  // printf("working\n");
+  int j = 0;
+  while(args[j] !=  NULL) {
+    printf("%s\n", args[j]);
+    j++;
+  }
   pid_t pid;
   pid_t pgid;
   JOB j;
@@ -280,12 +304,12 @@ void backgrounding(){ //! what does backgrounding takes in ?
     j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
 
 
-    /* 2. ! Handle concurrency with linked-list updating
-        . block() and unblock() wrapping around the critical region : updating the linked-list :
-        block()
-        update the list
-        unblock()
-    */
+     // 2. ! Handle concurrency with linked-list updating
+     //    . block() and unblock() wrapping around the critical region : updating the linked-list :
+     //    block()
+     //    update the list
+     //    unblock()
+
 
     block(sig);
     // 1. ! add_job() to linked list
@@ -345,8 +369,7 @@ void backgrounding(){ //! what does backgrounding takes in ?
 
   } // if
   else {printf("Error forking\n");} // else
-} //
-
+} //backgrouding()
 // ctrl - c
 /******************************************/ //BACKGROUNDING ENDS
 
@@ -363,26 +386,28 @@ int main(int argc, char **argv) {
    printf("Welcome to your shell:  ");
    line = read_line();
    args = split_line(line);
-   // status = find_delimiter(args);
+   if (goto_backgrounding(line)) {
+     backgrounding(args);
+   } else {
    status = execute(args);
-
+   }
    free(line);
    free(args);
  } while(status);
 
-   signal(SIGINT, SIG_IGN);
-   signal(SIGTERM, SIG_IGN);
-   signal(SIGTTIN, SIG_IGN);
-   signal(SIGTTOU, SIG_IGN);
-   signal(SIGTSTP, SIG_IGN);
-   signal(SIGQUIT, SIG_IGN);
+
+   // signal(SIGINT, SIG_IGN);
+   // signal(SIGTERM, SIG_IGN);
+   // signal(SIGTTIN, SIG_IGN);
+   // signal(SIGTTOU, SIG_IGN);
+   // signal(SIGTSTP, SIG_IGN);
+   // signal(SIGQUIT, SIG_IGN);
 
    // 1. parse() the command line
    // 2. match "&" with backgrouding
    // 3. backgrounding()
+   return 0;
 
-
-  return 0;
 } // main()
 
 /******************************************/ //MAIN ENDS
