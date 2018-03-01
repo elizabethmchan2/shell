@@ -14,9 +14,10 @@
 #include <sys/types.h>
 #include <ctype.h>
 
+#include "ll.h"
+
 void backgrounding(char** args);
 
-/******************************************/ //PARSING START
 
 #define MORE_BUFFER 64
 
@@ -35,6 +36,7 @@ struct Node {
   struct Node *next;
 };
 
+
 struct Node* head = NULL;//global head
 
 // void init_linkedlist(){
@@ -42,6 +44,7 @@ struct Node* head = NULL;//global head
 //   struct Node* last = NULL;
 // }
 
+/******************************************/ //PARSING START
 // reads whole input line
 char *read_line(void){
   int bufsize = INITIAL_BUFFER;
@@ -85,15 +88,6 @@ char **split_line(char *line){
   char **tokens = malloc(bufsize * sizeof(char*));
   char *token;
 
-  // char * pch;
-  // pch=strchr(line,'&');
-  // if (pch!=NULL) {
-  //   while (pch!=NULL) {
-  //     printf ("found at %ld\n",pch-line+1);
-  //     goto_backgrounding();
-  //     pch=strchr(pch+1,'&');
-  //   }
-  // } else {
     if (!tokens) {
       fprintf(stderr, "error: allocation error\n");
       exit(EXIT_FAILURE);
@@ -161,89 +155,6 @@ int execute(char **args){
 /******************************************/ //PARSING END
 
 
-/******************************************/ //LINKED LIST STARTS
-
-JOB create_job(pid_t job_id, char* name_id) {
-  //, int status, int fg_or_bg
-   JOB j;
-   j.job_id = job_id;
-   j.name_id = name_id;
-   // j.status = status;
-   // j.fg_or_bg = fg_or_bg;
-   return j;
-
-} //create_job()
-
-// Add new job to end of linked list
-void append(struct Node** head_ref, JOB job){
-    /* 1. allocate node */
-    struct Node* new_node = (struct Node*) malloc(sizeof(struct Node));
-
-    struct Node *last = *head_ref;  /* used in step 5*/
-
-    new_node->job = job;
-
-    /* 3. This new node is going to be the last node, so make next
-          of it as NULL*/
-    new_node->next = NULL;
-
-    /* 4. If the Linked List is empty, then make the new node as head */
-    if (*head_ref == NULL)
-    {
-       *head_ref = new_node;
-       return;
-    }
-
-    /* 5. Else traverse till the last node */
-    while (last->next != NULL)
-        last = last->next;
-
-    /* 6. Change the next of last node */
-    last->next = new_node;
-    return;
-} //append
-
-void deleteNode(struct Node **head_ref, pid_t job_id){
-    // Store head node
-    struct Node* temp = *head_ref, *prev;
-
-    // If head node itself holds the key to be deleted
-    if (temp != NULL && temp->job.job_id == job_id) // if (temp != NULL && temp->job.job_id == job_id)
-    {
-        *head_ref = temp->next;   // Changed head
-        free(temp);               // free old head
-        return;
-    }
-
-    // Search for the key to be deleted, keep track of the
-    // previous node as we need to change 'prev->next'
-    while (temp != NULL && temp->job.job_id  != job_id)
-    {
-        prev = temp;
-        temp = temp->next;
-    }
-
-    // If key was not present in linked list
-    if (temp == NULL) return;
-
-    // Unlink the node from linked list
-    prev->next = temp->next;
-
-    free(temp);  // Free memory
-} //deleteNode
-
-void printList(struct Node *node){
-   while (node != NULL)
-   {
-      printf("%d\n", node->job.job_id);
-      node = node->next;
-       // printf("%s\n",node);
-   }
-} //printList
-
-/******************************************/ //LINKED LIST ENDS
-
-/******************************************/ //BACKGROUNDING STARTS
 // !TEST THIS
 void s_handler(int signal, siginfo_t *info, void * t){
   pid_t child_id = info->si_pid;
@@ -273,123 +184,139 @@ int goto_backgrounding(char** args) {
     }
     j++;
   }
-
-  // char* pch;
-  // pch=strchr(line,'&');
-  // while (pch!=NULL){
-  //   printf ("found at %d\n",pch-line+1);
-  //   num++;
-  //   pch=strchr(pch+1,'&');
-  //
-  // }
-  // printf("num: %d\n", num);
   return num;
+
+}
+
+void removeChar(char *str, char garbage) {
+ // found at: https://stackoverflow.com/questions/5457608/how-to-remove-the-character-at-a-given-index-from-a-string-in-
+  char *src, *dst;
+  for (src = dst = str; *src != '\0'; src++) {
+      *dst = *src;
+      if (*dst != garbage) dst++;
+  }
+  *dst = '\0';
+}
+
+char **pass_into_backgrounding(char** args) {
+
+  int k = 0;
+  while(args[k] !=  NULL) {
+    // printf("before: %s\n", args[k]);
+    char* pch;
+    // char* copy = malloc(strlen(args[k])+1);;
+    // strcpy(copy, args[k]);
+    pch=strchr(args[k],'&');
+    if (pch!=NULL){
+      // printf ("found in %s at %d\n",args[k], pch-args[k]);
+      removeChar(args[k], '&');
+      // printf("deleted: %s\n", args[k]);
+
+      pch=strchr(pch+1,'&');
+    }
+  k++;
+  }
+  args[k] = "&"; //add back at the end of the char**
+  args[k+1] = NULL;
+  return args;
 
 }
 
 void backgrounding(char** args){ //! what does backgrounding takes in ?
   // printf("working\n");
 
-  //MAKE A NEW CHAR** THAT CONTAINS THE NEW ARGS TO RETURN AND THE FIRST IS THE FIRST TO PASS ITNO EXECVP
-  //SECOND AND FURTHER IS ARGUMENTS
-
-  // use instead to remove the &
-  // https://stackoverflow.com/questions/5457608/how-to-remove-the-character-at-a-given-index-from-a-string-in-c
-  int k = 0;
-  while(args[k] !=  NULL) {
-    // printf("in backgrounding: %s\n", args[k]);
-    char* pch;
-    pch=strchr(args[k],'&');
-    if (pch!=NULL){
-      // printf ("found in %s at %d\n",args[k], pch-args[k]);
-      // printf("%s\n", args[k]);
-      int bufsize = MORE_BUFFER;
-      int position = 0;
-      char **tokens = malloc(bufsize * sizeof(char*));
-      char *token;
-
-        if (!tokens) {
-        fprintf(stderr, "error: allocation error\n");
-        exit(EXIT_FAILURE);
-      }
-
-      token = strtok(args[k], "&");
-
-      while (token != NULL) {
-        tokens[position] = token;
-        printf("%s\n", tokens[position]);
-        position++;
-
-        if (position >= bufsize) {
-          bufsize += MORE_BUFFER;
-          tokens = realloc(tokens, bufsize * sizeof(char*));
-          if (!tokens) {
-            fprintf(stderr, "error: allocation error\n");
-            exit(EXIT_FAILURE);
-          }
-        }
-
-        token = strtok(NULL, "&");
-        tokens[position] = NULL;
-
-      }
-    pch=strchr(pch+1,'&');
-    free(tokens);
-    }
-  k++;
+  //
+  // int bufsize = MORE_BUFFER;
+  // int position = 0;
+  // char **arguments = malloc(bufsize * sizeof(char*));
+  // if (!arguments) {
+  //   fprintf(stderr, "error: allocation error\n");
+  //   exit(EXIT_FAILURE);
+  // }
+  //
+  // int a = 2;
+  // while (args[a] != NULL) {
+  //   arguments[position] = args[a];
+  //   position++;
+  //
+  //   if (position >= bufsize) {
+  //     bufsize += MORE_BUFFER;
+  //     arguments = realloc(arguments, bufsize * sizeof(char*));
+  //     if (!arguments) {
+  //       fprintf(stderr, "error: allocation error\n");
+  //       exit(EXIT_FAILURE);
+  //     }
+  //   }
+  //   a++;
+  // }
+  // arguments[position] = NULL;
+  //
+  int b = 0;
+  while(args[b] !=  NULL) {
+    // printf("after: ---%s---\n", args[b]);;
+    b++;
   }
+  int len = strlen(args[b-1]);
+  args[b] = NULL;
 
 
 
-//   pid_t pid;
-//   pid_t pgid;
-//   JOB j;
-//
-//   sigset_t sig;
-//   sigemptyset(&sig);
-//   sigaddset(&sig, SIGCHLD);
-//
-//   pid = fork();
-//
-//   // 2a. PARENT PROCESS
-//   if (pid > 0){
-//     // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
-//     // 0. create_job()
-//     //j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
-//
-//     /* 2. ! Handle concurrency with linked-list updating
-//         . block() and unblock() wrapping around the critical region : updating the linked-list :
-//         block()
-//         update the list
-//         unblock()*/
-//
-//     //block(sig);
-//     // 1. ! add_job() to linked list
-//     //unblock(sig);
-//
-//     // 3. Handle SIGCHLD
-//     struct sigaction sa;
-//     memset(&sa,0,sizeof(sa));
-//     sa.sa_sigaction= (void*)s_handler;
-//     sa.sa_flags = SA_RESTART | SA_SIGINFO;
-//     sigaction(SIGCHLD,&sa, NULL);
-//   } //if
-//
-//   // 2b. CHILD PROCESS
-//   else if (pid == 0){ // CHILD PROCESS
-//     /*1. Set signums back to default */
-//     signal(SIGINT, SIG_DFL);
-//     signal(SIGTERM, SIG_DFL);
-//     signal(SIGTTIN, SIG_DFL);
-//     signal(SIGTTOU, SIG_DFL);
-//     signal(SIGTSTP, SIG_DFL);
-//     signal(SIGQUIT, SIG_DFL);
-//
-//      /*2. setpgid(0,0);
-//           a. create a new process group
-//         (?) pgid? of child process => getppid()? */
-//
-//
+  pid_t pid;
+  pid_t pgid;
+  JOB j;
+
+  sigset_t sig;
+  sigemptyset(&sig);
+  sigaddset(&sig, SIGCHLD);
+
+  pid = fork();
+  // 2a. PARENT PROCESS
+  if (pid > 0){
+    // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
+    // 0. create_job()
+    //j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
+
+    // 2. ! Handle concurrency with linked-list updating
+    // know: pid is now the child process pid
+    block(sig);
+    create_job(); //is this the right place to put create_job()?
+    append(&head, pid);
+    unblock(sig);
+
+
+    // The parent removes job when the child terminates
+    // How do we know when the child terminates?
+    // When the OS sends signal SIGCHLD to the parent process
+
+    // Does that means we have to handle remove_job() in SIGCHLD handler ?
+    // But first you have to find out if the child actually terminated, because
+    block(sig);
+    // remove_job()
+    unblock(sig);
+
+    // 3. Handle SIGCHLD
+    struct sigaction sa;
+    memset(&sa,0,sizeof(sa));
+    sa.sa_sigaction= (void*)s_handler;
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigaction(SIGCHLD,&sa, NULL);
+  } //if
+
+  // 2b. CHILD PROCESS
+  else if (pid == 0){ // CHILD PROCESS
+    /*1. Set signums back to default */
+    signal(SIGINT, SIG_DFL);
+    signal(SIGTERM, SIG_DFL);
+    signal(SIGTTIN, SIG_DFL);
+    signal(SIGTTOU, SIG_DFL);
+    signal(SIGTSTP, SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
+
+     /*2. setpgid(0,0);
+          a. create a new process group
+        (?) pgid? of child process => getppid()? */
+
+
 // //****************************CHECKED BACKGROUNDING
 //     // check if & exists first
 //     char* line = "&";
@@ -416,14 +343,25 @@ void backgrounding(char** args){ //! what does backgrounding takes in ?
 //
 //     // execvp("./h",tests);
 // //*********************************8888888
-//     // execvp("")
-//
-//
-//     free(tests);
-//     free(args);
-  // } // else if
-  // else {printf("Error forking\n");} // else
-} //
+    // printf("%s\n", args[0][1]);
+    // int len = strlen(args[0]);
+    // char space = ' ';
+    // args[0][len] = space;
+    // args[0][len+1] = '\0';
+    // printf("----%s---\n", args[0]);
+    //
+    // char * str3 = (char *) malloc(1 + strlen(args[0])+ strlen(args[1]) );
+    // strcpy(str3, args[0]);
+    // strcat(str3, args[1]);
+    // printf("%s\n", str3);
+    execvp(args[0],args);
+
+
+  } else { // else
+    printf("Error forking\n");
+  }
+  // free(arguments);
+}
 /******************************************/ //BACKGROUNDING ENDS
 
 
@@ -440,6 +378,7 @@ int main(int argc, char **argv) {
 
   char *line;
   char **args;
+  char **parse_backgrounding;
   int status = 0;
 
  do {
@@ -447,7 +386,8 @@ int main(int argc, char **argv) {
    line = read_line();
    args = split_line(line);
    if (goto_backgrounding(args) > 0) {
-     backgrounding(args);
+     parse_backgrounding = pass_into_backgrounding(args);
+     backgrounding(parse_backgrounding);
    } else {
    status = execute(args);
    }
