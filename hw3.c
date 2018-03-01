@@ -21,11 +21,10 @@
 #define INITIAL_BUFFER 1024
 
 typedef struct{
-  pid_t pid;
-  char* command;
+  pid_t job_id;
+  char* name_id;
   int status; //0 is suspended, 1 is running;
   int fg_or_bg; //0 is fg, 1 is bg
-
 } JOB;
 
 // declare linked-list
@@ -164,10 +163,10 @@ int execute(char **args){
 
 /******************************************/ //LINKED LIST STARTS
 
-JOB create_job(pid_t jobID, char* nameID) {
+JOB create_job(pid_t job_id, char* name_id) {
    JOB j;
-   j.job_id = jobID;
-   j.name_id = nameID;
+   j.job_id = job_id;
+   j.name_id = name_id;
    //j.status = ?
    return j;
 } //create_job()
