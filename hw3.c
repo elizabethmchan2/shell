@@ -35,14 +35,12 @@ struct Node {
   struct Node *next;
 };
 
-
 struct Node* head = NULL;//global head
 
 // void init_linkedlist(){
 //   struct Node* head = NULL;
 //   struct Node* last = NULL;
 // }
-
 
 // reads whole input line
 char *read_line(void){
@@ -142,14 +140,12 @@ int fork_child(char **args){
       waitpid(pid, &status, WUNTRACED);
     } while (!WIFEXITED(status) && !WIFSIGNALED(status));
   }
-
   return 1;
 }
 
 //executes the commands taken in from split_line function
 int execute(char **args){
   int i;
-
   if (args[0] == NULL) {
     return 1;
   }
@@ -205,17 +201,14 @@ void append(struct Node** head_ref, JOB job){
     /* 6. Change the next of last node */
     last->next = new_node;
     return;
-}
+} //append
 
-
-/* Given a reference (pointer to pointer) to the head of a list
-   and a pid, deletes the first occurrence of pid in linked list */
 void deleteNode(struct Node **head_ref, pid_t job_id){
     // Store head node
     struct Node* temp = *head_ref, *prev;
 
     // If head node itself holds the key to be deleted
-    if (temp != NULL && temp->job.job_id == job_id)
+    if (temp != NULL && temp->job.job_id == job_id) // if (temp != NULL && temp->job.job_id == job_id)
     {
         *head_ref = temp->next;   // Changed head
         free(temp);               // free old head
@@ -237,9 +230,8 @@ void deleteNode(struct Node **head_ref, pid_t job_id){
     prev->next = temp->next;
 
     free(temp);  // Free memory
-}
+} //deleteNode
 
-/* Function to print nodes in a given linked list.*/
 void printList(struct Node *node){
    while (node != NULL)
    {
@@ -247,7 +239,7 @@ void printList(struct Node *node){
       node = node->next;
        // printf("%s\n",node);
    }
-}
+} //printList
 
 /******************************************/ //LINKED LIST ENDS
 
@@ -294,93 +286,94 @@ int goto_backgrounding(char** args) {
 
 }
 
-
 void backgrounding(char** args){ //! what does backgrounding takes in ?
   // printf("working\n");
-  int j = 0;
-  while(args[j] !=  NULL) {
-    printf("in backgrounding: %s\n", args[j]);
-    j++;
+  int k = 0;
+  while(args[k] !=  NULL) {
+    printf("in backgrounding: %s\n", args[k]);
+    k++;
   }
-  // pid_t pid;
-  // pid_t pgid;
-  // JOB j;
-  //
-  // sigset_t sig;
-  // sigemptyset(&sig);
-  // sigaddset(&sig, SIGCHLD);
-  //
-  // pid = fork();
-  //
-  // // 2a. PARENT PROCESS
-  // if (pid > 0){
-  //   // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
-  //   // 0. create_job()
-  //   //j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
-  //
-  //   /* 2. ! Handle concurrency with linked-list updating
-  //       . block() and unblock() wrapping around the critical region : updating the linked-list :
-  //       block()
-  //       update the list
-  //       unblock()*/
-  //
-  //   //block(sig);
-  //   // 1. ! add_job() to linked list
-  //   //unblock(sig);
-  //
-  //   // 3. Handle SIGCHLD
-  //   struct sigaction sa;
-  //   memset(&sa,0,sizeof(sa));
-  //   sa.sa_sigaction= (void*)s_handler;
-  //   sa.sa_flags = SA_RESTART | SA_SIGINFO;
-  //   sigaction(SIGCHLD,&sa, NULL);
-  // } //if
-  //
-  // // 2b. CHILD PROCESS
-  // else if (pid == 0){ // CHILD PROCESS
-  //   /*1. Set signums back to default */
-  //   signal(SIGINT, SIG_DFL);
-  //   signal(SIGTERM, SIG_DFL);
-  //   signal(SIGTTIN, SIG_DFL);
-  //   signal(SIGTTOU, SIG_DFL);
-  //   signal(SIGTSTP, SIG_DFL);
-  //   signal(SIGQUIT, SIG_DFL);
-  //
-  //    /*2. setpgid(0,0);
-  //         a. create a new process group
-  //       (?) pgid? of child process => getppid()? */
-  //
-  //   /*3. exec child*/
-  //   // execvp(*tokens[0], *tokens[1]);
-  //   // ! check if parameters are right,
-  //   // *token is declared as char **tokens
-  //
-  //   //check if & exists first
-  //   char* line = "&";
-  //   int bufsize = MORE_BUFFER;
-  //   int position = 0;
-  //   char **tests = malloc(bufsize * sizeof(char*)); //pointer to the array of string char
-  //   char *test;
-  //
-  //     // if (!tests) {
-  //     //   fprintf(stderr, "error: allocation error\n");
-  //     //   exit(EXIT_FAILURE);
-  //     // }
-  //
-  //   test = strtok(line, " \t\r\n\a");
-  //   while (test != NULL) {
-  //     tests[position] = test;
-  //     position++;
-  //     test = strtok(NULL, " \t\r\n\a");
-  //   }//while
-  //
-  //   //execvp("./h", line);
-  //   execvp("./h",tests);
-  //
-  //
-  //   free(tests);
-  // } // else if
-  // else {printf("Error forking\n");} // else
+  pid_t pid;
+  pid_t pgid;
+  JOB j;
+
+  sigset_t sig;
+  sigemptyset(&sig);
+  sigaddset(&sig, SIGCHLD);
+
+  pid = fork();
+
+  // 2a. PARENT PROCESS
+  if (pid > 0){
+    // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
+    // 0. create_job()
+    //j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
+
+    /* 2. ! Handle concurrency with linked-list updating
+        . block() and unblock() wrapping around the critical region : updating the linked-list :
+        block()
+        update the list
+        unblock()*/
+
+    //block(sig);
+    // 1. ! add_job() to linked list
+    //unblock(sig);
+
+    // 3. Handle SIGCHLD
+    struct sigaction sa;
+    memset(&sa,0,sizeof(sa));
+    sa.sa_sigaction= (void*)s_handler;
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigaction(SIGCHLD,&sa, NULL);
+  } //if
+
+  // 2b. CHILD PROCESS
+  else if (pid == 0){ // CHILD PROCESS
+    /*1. Set signums back to default */
+    signal(SIGINT, SIG_DFL);
+    signal(SIGTERM, SIG_DFL);
+    signal(SIGTTIN, SIG_DFL);
+    signal(SIGTTOU, SIG_DFL);
+    signal(SIGTSTP, SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
+
+     /*2. setpgid(0,0);
+          a. create a new process group
+        (?) pgid? of child process => getppid()? */
+
+
+//****************************CHECKED BACKGROUNDING
+    //check if & exists first
+    // char* line = "&";
+    // int bufsize = MORE_BUFFER;
+    // int position = 0;
+    // char **tests = malloc(bufsize * sizeof(char*)); //pointer to the array of string char
+    // char *test;
+    // char *end_pointer = NULL;
+    //
+    //   // if (!tests) {
+    //   //   fprintf(stderr, "error: allocation error\n");
+    //   //   exit(EXIT_FAILURE);
+    //   // }
+    //
+    // test = strtok(line, " \t\r\n\a");
+    // while (test != NULL) {
+    //   tests[position] = test;
+    //   position++;
+    //   test = strtok(NULL, " \t\r\n\a");
+    // }//while
+    //
+    // //when you have reached the end of tests, put a null pointer at the end of tests
+    // tests[position] = end_pointer;
+
+    // execvp("./h",tests);
+//*********************************8888888
+    // execvp("")
+
+
+    //free(args);
+  } // else if
+  else {printf("Error forking\n");} // else
 } //
 /******************************************/ //BACKGROUNDING ENDS
 
@@ -389,10 +382,16 @@ void backgrounding(char** args){ //! what does backgrounding takes in ?
 /******************************************/ //MAIN STARTS
 //main control loop that runs everything
 int main(int argc, char **argv) {
+  signal(SIGINT, SIG_IGN);
+  signal(SIGTERM, SIG_IGN);
+  signal(SIGTTIN, SIG_IGN);
+  signal(SIGTTOU, SIG_IGN);
+  signal(SIGTSTP, SIG_IGN);
+  signal(SIGQUIT, SIG_IGN);
 
- char *line;
- char **args;
- int status;
+  char *line;
+  char **args;
+  int status = 0;
 
  do {
    printf("Welcome to your shell:  ");
@@ -408,13 +407,6 @@ int main(int argc, char **argv) {
  } while(status);
 
 
-   // signal(SIGINT, SIG_IGN);
-   // signal(SIGTERM, SIG_IGN);
-   // signal(SIGTTIN, SIG_IGN);
-   // signal(SIGTTOU, SIG_IGN);
-   // signal(SIGTSTP, SIG_IGN);
-   // signal(SIGQUIT, SIG_IGN);
-
    // 1. parse() the command line
    // 2. match "&" with backgrouding
    // 3. backgrounding()
@@ -423,3 +415,11 @@ int main(int argc, char **argv) {
 } // main()
 
 /******************************************/ //MAIN ENDS
+
+// The parent removes job when the child terminates
+// How do we know when the child terminates?
+//
+// When the OS sends signal SIGCHLD to the parent process
+
+// Does that means we have to handle remove_job() in SIGCHLD handler ?
+// But first you have to find out if the child actually terminated, because 
