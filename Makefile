@@ -1,7 +1,6 @@
 all:	hw3.o
 	# shell.o	linkedlisttest.o test.o
-
-
+	
 # shell.o:	shell.c
 # 	gcc shell.c -o shell
 #
