@@ -263,6 +263,7 @@ int goto_backgrounding(char** args) {
   int num = 0;
   while(args[j] !=  NULL) {
     // printf("%s\n", args[j]);
+    //IMPLEMENT ; THING HERE ///////////////////////////////////////--->
     char* pch;
     pch=strchr(args[j],'&');
     while (pch!=NULL){
@@ -288,92 +289,140 @@ int goto_backgrounding(char** args) {
 
 void backgrounding(char** args){ //! what does backgrounding takes in ?
   // printf("working\n");
+
+  //MAKE A NEW CHAR** THAT CONTAINS THE NEW ARGS TO RETURN AND THE FIRST IS THE FIRST TO PASS ITNO EXECVP
+  //SECOND AND FURTHER IS ARGUMENTS
+
+  // use instead to remove the &
+  // https://stackoverflow.com/questions/5457608/how-to-remove-the-character-at-a-given-index-from-a-string-in-c
   int k = 0;
   while(args[k] !=  NULL) {
-    printf("in backgrounding: %s\n", args[k]);
-    k++;
+    // printf("in backgrounding: %s\n", args[k]);
+    char* pch;
+    pch=strchr(args[k],'&');
+    if (pch!=NULL){
+      // printf ("found in %s at %d\n",args[k], pch-args[k]);
+      // printf("%s\n", args[k]);
+      int bufsize = MORE_BUFFER;
+      int position = 0;
+      char **tokens = malloc(bufsize * sizeof(char*));
+      char *token;
+
+        if (!tokens) {
+        fprintf(stderr, "error: allocation error\n");
+        exit(EXIT_FAILURE);
+      }
+
+      token = strtok(args[k], "&");
+
+      while (token != NULL) {
+        tokens[position] = token;
+        printf("%s\n", tokens[position]);
+        position++;
+
+        if (position >= bufsize) {
+          bufsize += MORE_BUFFER;
+          tokens = realloc(tokens, bufsize * sizeof(char*));
+          if (!tokens) {
+            fprintf(stderr, "error: allocation error\n");
+            exit(EXIT_FAILURE);
+          }
+        }
+
+        token = strtok(NULL, "&");
+        tokens[position] = NULL;
+
+      }
+    pch=strchr(pch+1,'&');
+    free(tokens);
+    }
+  k++;
   }
-  pid_t pid;
-  pid_t pgid;
-  JOB j;
-
-  sigset_t sig;
-  sigemptyset(&sig);
-  sigaddset(&sig, SIGCHLD);
-
-  pid = fork();
-
-  // 2a. PARENT PROCESS
-  if (pid > 0){
-    // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
-    // 0. create_job()
-    //j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
-
-    /* 2. ! Handle concurrency with linked-list updating
-        . block() and unblock() wrapping around the critical region : updating the linked-list :
-        block()
-        update the list
-        unblock()*/
-
-    //block(sig);
-    // 1. ! add_job() to linked list
-    //unblock(sig);
-
-    // 3. Handle SIGCHLD
-    struct sigaction sa;
-    memset(&sa,0,sizeof(sa));
-    sa.sa_sigaction= (void*)s_handler;
-    sa.sa_flags = SA_RESTART | SA_SIGINFO;
-    sigaction(SIGCHLD,&sa, NULL);
-  } //if
-
-  // 2b. CHILD PROCESS
-  else if (pid == 0){ // CHILD PROCESS
-    /*1. Set signums back to default */
-    signal(SIGINT, SIG_DFL);
-    signal(SIGTERM, SIG_DFL);
-    signal(SIGTTIN, SIG_DFL);
-    signal(SIGTTOU, SIG_DFL);
-    signal(SIGTSTP, SIG_DFL);
-    signal(SIGQUIT, SIG_DFL);
-
-     /*2. setpgid(0,0);
-          a. create a new process group
-        (?) pgid? of child process => getppid()? */
 
 
-//****************************CHECKED BACKGROUNDING
-    //check if & exists first
-    // char* line = "&";
-    // int bufsize = MORE_BUFFER;
-    // int position = 0;
-    // char **tests = malloc(bufsize * sizeof(char*)); //pointer to the array of string char
-    // char *test;
-    // char *end_pointer = NULL;
-    //
-    //   // if (!tests) {
-    //   //   fprintf(stderr, "error: allocation error\n");
-    //   //   exit(EXIT_FAILURE);
-    //   // }
-    //
-    // test = strtok(line, " \t\r\n\a");
-    // while (test != NULL) {
-    //   tests[position] = test;
-    //   position++;
-    //   test = strtok(NULL, " \t\r\n\a");
-    // }//while
-    //
-    // //when you have reached the end of tests, put a null pointer at the end of tests
-    // tests[position] = end_pointer;
 
-    // execvp("./h",tests);
-//*********************************8888888
-    // execvp("")
-
-
-    //free(args);
-  } // else if
-  else {printf("Error forking\n");} // else
+//   pid_t pid;
+//   pid_t pgid;
+//   JOB j;
+//
+//   sigset_t sig;
+//   sigemptyset(&sig);
+//   sigaddset(&sig, SIGCHLD);
+//
+//   pid = fork();
+//
+//   // 2a. PARENT PROCESS
+//   if (pid > 0){
+//     // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
+//     // 0. create_job()
+//     //j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
+//
+//     /* 2. ! Handle concurrency with linked-list updating
+//         . block() and unblock() wrapping around the critical region : updating the linked-list :
+//         block()
+//         update the list
+//         unblock()*/
+//
+//     //block(sig);
+//     // 1. ! add_job() to linked list
+//     //unblock(sig);
+//
+//     // 3. Handle SIGCHLD
+//     struct sigaction sa;
+//     memset(&sa,0,sizeof(sa));
+//     sa.sa_sigaction= (void*)s_handler;
+//     sa.sa_flags = SA_RESTART | SA_SIGINFO;
+//     sigaction(SIGCHLD,&sa, NULL);
+//   } //if
+//
+//   // 2b. CHILD PROCESS
+//   else if (pid == 0){ // CHILD PROCESS
+//     /*1. Set signums back to default */
+//     signal(SIGINT, SIG_DFL);
+//     signal(SIGTERM, SIG_DFL);
+//     signal(SIGTTIN, SIG_DFL);
+//     signal(SIGTTOU, SIG_DFL);
+//     signal(SIGTSTP, SIG_DFL);
+//     signal(SIGQUIT, SIG_DFL);
+//
+//      /*2. setpgid(0,0);
+//           a. create a new process group
+//         (?) pgid? of child process => getppid()? */
+//
+//
+// //****************************CHECKED BACKGROUNDING
+//     // check if & exists first
+//     char* line = "&";
+//     int bufsize = MORE_BUFFER;
+//     int position = 0;
+//     char **tests = malloc(bufsize * sizeof(char*)); //pointer to the array of string char
+//     char *test;
+//     char *end_pointer = NULL;
+//
+//       // if (!tests) {
+//       //   fprintf(stderr, "error: allocation error\n");
+//       //   exit(EXIT_FAILURE);
+//       // }
+//
+//     test = strtok(line, " \t\r\n\a");
+//     while (test != NULL) {
+//       tests[position] = test;
+//       position++;
+//       test = strtok(NULL, " \t\r\n\a");
+//     }//while
+//
+//     //when you have reached the end of tests, put a null pointer at the end of tests
+//     tests[position] = end_pointer;
+//
+//     // execvp("./h",tests);
+// //*********************************8888888
+//     // execvp("")
+//
+//
+//     free(tests);
+//     free(args);
+  // } // else if
+  // else {printf("Error forking\n");} // else
 } //
 /******************************************/ //BACKGROUNDING ENDS
 
@@ -422,4 +471,4 @@ int main(int argc, char **argv) {
 // When the OS sends signal SIGCHLD to the parent process
 
 // Does that means we have to handle remove_job() in SIGCHLD handler ?
-// But first you have to find out if the child actually terminated, because 
+// But first you have to find out if the child actually terminated, because
