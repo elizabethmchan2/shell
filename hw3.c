@@ -266,16 +266,19 @@ void unblock(sigset_t sig){
 } //unblock()
 
 int goto_backgrounding(char* line) {
+  int num = 0;
   char * pch;
   pch=strchr(line,'&');
-  if (pch!=NULL) {
+  // if (pch!=NULL) {
     while (pch!=NULL) {
       printf ("found at %ld\n",pch-line+1);
+      num++;
       pch=strchr(pch+1,'&');
+
     }
-    return 1;
-  }
-  return 0;
+  // }
+  printf("%d\n", num);
+  return num;
 
 }
 
@@ -287,91 +290,88 @@ void backgrounding(char** args){ //! what does backgrounding takes in ?
     printf("%s\n", args[j]);
     j++;
   }
-  pid_t pid;
-  pid_t pgid;
-  JOB j;
-
-  sigset_t sig;
-  sigemptyset(&sig);
-  sigaddset(&sig, SIGCHLD);
-
-  pid = fork();
-
-  // 2a. PARENT PROCESS
-  if (pid > 0){
-    // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
-    // 0. create_job()
-    j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
-
-
-     // 2. ! Handle concurrency with linked-list updating
-     //    . block() and unblock() wrapping around the critical region : updating the linked-list :
-     //    block()
-     //    update the list
-     //    unblock()
-
-
-    block(sig);
-    // 1. ! add_job() to linked list
-    unblock(sig);
-
-    // 3. Handle SIGCHLD
-    struct sigaction sa;
-    memset(&sa,0,sizeof(sa));
-    sa.sa_sigaction= (void*)s_handler;
-    sa.sa_flags = SA_RESTART | SA_SIGINFO;
-    sigaction(SIGCHLD,&sa, NULL);
-
-
-  } //if
-
-  // 2b. CHILD PROCESS
-  else if (pid == 0){ // CHILD PROCESS
-    /*1. Set signums back to default */
-     signal(SIGINT, SIG_DFL);
-     signal(SIGTERM, SIG_DFL);
-     signal(SIGTTIN, SIG_DFL);
-     signal(SIGTTOU, SIG_DFL);
-     signal(SIGTSTP, SIG_DFL);
-     signal(SIGQUIT, SIG_DFL);
-
-     /*2. setpgid(0,0);
-          a. create a new process group
-        (?) pgid? of child process => getppid()? */
-
-    /*3. exec child*/
-    //execvp(*tokens[0], *tokens[1]); \
-    // ! check if parameters are right,
-    // *token is declared as char **tokens
-
-    //check if & exists first
-    char* line = "hello.c &";
-    int bufsize = MORE_BUFFER;
-    int position = 0;
-    char **tests = malloc(bufsize * sizeof(char*));
-    char *test;
-
-      if (!tests) {
-        fprintf(stderr, "error: allocation error\n");
-        exit(EXIT_FAILURE);
-      }
-
-      test = strtok(line, " \t\r\n\a");
-      while (test != NULL) {
-        tests[position] = test;
-        position++;
-        test = strtok(NULL, " \t\r\n\a");
-      }
-
-    execvp("emacs", tests);
-
-    free(tests);
-
-  } // if
-  else {printf("Error forking\n");} // else
-} //backgrouding()
-// ctrl - c
+  // pid_t pid;
+  // pid_t pgid;
+  // JOB j;
+  //
+  // sigset_t sig;
+  // sigemptyset(&sig);
+  // sigaddset(&sig, SIGCHLD);
+  //
+  // pid = fork();
+  //
+  // // 2a. PARENT PROCESS
+  // if (pid > 0){
+  //   // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
+  //   // 0. create_job()
+  //   //j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
+  //
+  //   /* 2. ! Handle concurrency with linked-list updating
+  //       . block() and unblock() wrapping around the critical region : updating the linked-list :
+  //       block()
+  //       update the list
+  //       unblock()*/
+  //
+  //   //block(sig);
+  //   // 1. ! add_job() to linked list
+  //   //unblock(sig);
+  //
+  //   // 3. Handle SIGCHLD
+  //   struct sigaction sa;
+  //   memset(&sa,0,sizeof(sa));
+  //   sa.sa_sigaction= (void*)s_handler;
+  //   sa.sa_flags = SA_RESTART | SA_SIGINFO;
+  //   sigaction(SIGCHLD,&sa, NULL);
+  // } //if
+  //
+  // // 2b. CHILD PROCESS
+  // else if (pid == 0){ // CHILD PROCESS
+  //   /*1. Set signums back to default */
+  //   signal(SIGINT, SIG_DFL);
+  //   signal(SIGTERM, SIG_DFL);
+  //   signal(SIGTTIN, SIG_DFL);
+  //   signal(SIGTTOU, SIG_DFL);
+  //   signal(SIGTSTP, SIG_DFL);
+  //   signal(SIGQUIT, SIG_DFL);
+  //
+  //    /*2. setpgid(0,0);
+  //         a. create a new process group
+  //       (?) pgid? of child process => getppid()? */
+  //
+  //   /*3. exec child*/
+  //   // execvp(*tokens[0], *tokens[1]);
+  //   // ! check if parameters are right,
+  //   // *token is declared as char **tokens
+  //
+  //   //check if & exists first
+  //   char* line = "&";
+  //   int bufsize = MORE_BUFFER;
+  //   int position = 0;
+  //   char **tests = malloc(bufsize * sizeof(char*)); //pointer to the array of string char
+  //   char *test;
+  //
+  //     // if (!tests) {
+  //     //   fprintf(stderr, "error: allocation error\n");
+  //     //   exit(EXIT_FAILURE);
+  //     // }
+  //
+  //   test = strtok(line, " \t\r\n\a");
+  //   while (test != NULL) {
+  //     tests[position] = test;
+  //     position++;
+  //     test = strtok(NULL, " \t\r\n\a");
+  //   }//while
+  //
+  //   //execvp("./h", line);
+  //   execvp("./h",tests);
+  //
+  //
+  //   free(tests);
+  // } // else if
+  // else {printf("Error forking\n");} // else
+} //
 /******************************************/ //BACKGROUNDING ENDS
+
 
 
 /******************************************/ //MAIN STARTS
@@ -386,7 +386,7 @@ int main(int argc, char **argv) {
    printf("Welcome to your shell:  ");
    line = read_line();
    args = split_line(line);
-   if (goto_backgrounding(line)) {
+   if (goto_backgrounding(line) > 0) {
      backgrounding(args);
    } else {
    status = execute(args);
