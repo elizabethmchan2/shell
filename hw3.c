@@ -12,6 +12,7 @@
 #include <termios.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <ctype.h>
 
 void backgrounding(char** args);
 
@@ -265,19 +266,30 @@ void unblock(sigset_t sig){
   sigprocmask(SIG_UNBLOCK,&sig,NULL);
 } //unblock()
 
-int goto_backgrounding(char* line) {
+int goto_backgrounding(char** args) {
+  int j = 0;
   int num = 0;
-  char * pch;
-  pch=strchr(line,'&');
-  // if (pch!=NULL) {
-    while (pch!=NULL) {
-      printf ("found at %ld\n",pch-line+1);
+  while(args[j] !=  NULL) {
+    // printf("%s\n", args[j]);
+    char* pch;
+    pch=strchr(args[j],'&');
+    while (pch!=NULL){
+      // printf ("found in %s at %d\n",args[j], pch-args[j]+1);
       num++;
       pch=strchr(pch+1,'&');
-
     }
+    j++;
+  }
+
+  // char* pch;
+  // pch=strchr(line,'&');
+  // while (pch!=NULL){
+  //   printf ("found at %d\n",pch-line+1);
+  //   num++;
+  //   pch=strchr(pch+1,'&');
+  //
   // }
-  printf("%d\n", num);
+  // printf("num: %d\n", num);
   return num;
 
 }
@@ -287,7 +299,7 @@ void backgrounding(char** args){ //! what does backgrounding takes in ?
   // printf("working\n");
   int j = 0;
   while(args[j] !=  NULL) {
-    printf("%s\n", args[j]);
+    printf("in backgrounding: %s\n", args[j]);
     j++;
   }
   // pid_t pid;
@@ -386,7 +398,7 @@ int main(int argc, char **argv) {
    printf("Welcome to your shell:  ");
    line = read_line();
    args = split_line(line);
-   if (goto_backgrounding(line) > 0) {
+   if (goto_backgrounding(args) > 0) {
      backgrounding(args);
    } else {
    status = execute(args);
