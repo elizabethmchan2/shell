@@ -1,45 +1,168 @@
+//some code sourced from https://brennan.io/2015/01/16/write-a-shell-in-c/
+//partner with Han
+//emacs -nw hw4.c&
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <termios.h>
+#include <signal.h>
 #include <sys/types.h>
 
+
+/******************************************/ //PARSING START
+
+#define MORE_BUFFER 64
+
+#define INITIAL_BUFFER 1024
+
+typedef struct{
+  pid_t pid;
+  char* command;
+  int status; //0 is suspended, 1 is running;
+  int fg_or_bg; //0 is fg, 1 is bg
+
+} JOB;
+
 // declare linked-list
-struct node {
+struct Node {
   JOB job;
   struct Node *next;
-} Node;
+};
 
-//each node is of typedef struct JOB
-typedef struct {
-  pid_t job_id;
-  char* name_id;
-  int status; //0 is stopped, 1 in running
-  int fg_bg; //0 for foreground, 1 for backgrounding
-  // termios
-}JOB;
 
-struct Node* head = NULL; //global head node
+struct Node* head = NULL;//global head
 
-void s_handler(int signal, siginfo_t *info, void * t);
-JOB create_job();
-void backgrounding();
+// void init_linkedlist(){
+//   struct Node* head = NULL;
+//   struct Node* last = NULL;
+// }
 
-int main(){
-  signal(SIGINT, SIG_IGN);
-  signal(SIGTERM, SIG_IGN);
-  signal(SIGTTIN, SIG_IGN);
-  signal(SIGTTOU, SIG_IGN);
-  signal(SIGTSTP, SIG_IGN);
-  signal(SIGQUIT, SIG_IGN);
 
-  // 1. parse() the command line
-  // 2. match "&" with backgrouding
-  // 3. backgrounding()
+// reads whole input line
+char *read_line(void){
+  int bufsize = INITIAL_BUFFER;
+  int position = 0;
+  char *buffer = malloc(sizeof(char) * bufsize);
+  int c;
 
-  return 0;
-} // main()
+  if (!buffer) {
+    fprintf(stderr, "error: allocation error\n");
+    exit(EXIT_FAILURE);
+  }
+
+  while (1) {
+    c = getchar();
+
+    if (c == EOF || c == '\n') {
+      buffer[position] = '\0';
+      return buffer;
+    } else {
+      buffer[position] = c;
+    }
+    position++;
+
+    if (position >= bufsize) {
+      bufsize += INITIAL_BUFFER;
+      buffer = realloc(buffer, bufsize);
+      if (!buffer) {
+        fprintf(stderr, "lsh: allocation error\n");
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+}
+
+//takes in return value from read_line and splits the line
+char **split_line(char *line){
+
+  //check if & exists first
+  int bufsize = MORE_BUFFER;
+  int position = 0;
+  char **tokens = malloc(bufsize * sizeof(char*));
+  char *token;
+
+  char * pch;
+  pch=strchr(line,'&');
+  if (pch!=NULL) {
+    while (pch!=NULL) {
+      printf ("found at %ld\n",pch-line+1);
+      // backgrounding();
+      pch=strchr(pch+1,'&');
+    }
+  } else {
+    if (!tokens) {
+      fprintf(stderr, "error: allocation error\n");
+      exit(EXIT_FAILURE);
+    }
+
+    token = strtok(line, " \t\r\n\a");
+    while (token != NULL) {
+      tokens[position] = token;
+      position++;
+
+      if (position >= bufsize) {
+        bufsize += MORE_BUFFER;
+        tokens = realloc(tokens, bufsize * sizeof(char*));
+        if (!tokens) {
+          fprintf(stderr, "error: allocation error\n");
+          exit(EXIT_FAILURE);
+        }
+      }
+
+      token = strtok(NULL, " \t\r\n\a");
+    }
+  }
+  tokens[position] = NULL;
+  return tokens;
+}
+
+//fork the child process and changes the running status (therefore changes while loop) if it does/doesn’t work
+int fork_child(char **args){
+  pid_t pid;
+  int status;
+
+  pid = fork();
+  if (pid == 0) {
+    // Child process
+    if (execvp(args[0], args) == -1 || pid < 0) {
+      perror("error");
+    }
+    exit(EXIT_FAILURE);
+  } else {
+    // Parent process
+    do {
+      waitpid(pid, &status, WUNTRACED);
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+  }
+
+  return 1;
+}
+
+//executes the commands taken in from split_line function
+int execute(char **args){
+  int i;
+
+  if (args[0] == NULL) {
+    return 1;
+  }
+
+  if (strcmp(*args,"exit") == 0) {
+    exit(EXIT_SUCCESS);
+  }
+
+  return fork_child(args);
+}
+
+
+/******************************************/ //PARSING END
+
+
+/******************************************/ //LINKED LIST STARTS
 
 JOB create_job(pid_t jobID, char* nameID) {
    JOB j;
@@ -50,8 +173,7 @@ JOB create_job(pid_t jobID, char* nameID) {
 } //create_job()
 
 // Add new job to end of linked list
-void append(struct Node** head_ref, JOB job)
-{
+void append(struct Node** head_ref, JOB job){
     /* 1. allocate node */
     struct Node* new_node = (struct Node*) malloc(sizeof(struct Node));
 
@@ -82,8 +204,7 @@ void append(struct Node** head_ref, JOB job)
 
 /* Given a reference (pointer to pointer) to the head of a list
    and a pid, deletes the first occurrence of pid in linked list */
-void deleteNode(struct Node **head_ref, pid_t job_id)
-{
+void deleteNode(struct Node **head_ref, pid_t job_id){
     // Store head node
     struct Node* temp = *head_ref, *prev;
 
@@ -113,8 +234,7 @@ void deleteNode(struct Node **head_ref, pid_t job_id)
 }
 
 /* Function to print nodes in a given linked list.*/
- void printList(struct Node *node)
- {
+ void printList(struct Node *node){
      while (node != NULL)
      {
         printf("%d\n", node->job.job_id);
@@ -123,6 +243,9 @@ void deleteNode(struct Node **head_ref, pid_t job_id)
      }
  }
 
+/******************************************/ //LINKED LIST ENDS
+
+/******************************************/ //BACKGROUNDING STARTS
 // !TEST THIS
 void s_handler(int signal, siginfo_t *info, void * t){
   pid_t child_id = sig_info->si.pid;
@@ -150,7 +273,6 @@ void backgrounding(){ //! what does backgrounding takes in ?
 
     /* 2. ! Handle concurrency with linked-list updating
         . block() and unblock() wrapping around the critical region : updating the linked-list :
-
         block()
         update the list
         unblock()
@@ -203,3 +325,41 @@ void unblock(){
 } //unblock()
 
 // ctrl - c
+/******************************************/ //BACKGROUNDING ENDS
+
+
+/******************************************/ //MAIN STARTS
+//main control loop that runs everything
+int main(int argc, char **argv) {
+
+ char *line;
+ char **args;
+ int status;
+
+ do {
+   printf("Welcome to your shell:  ");
+   line = read_line();
+   args = split_line(line);
+   // status = find_delimiter(args);
+   status = execute(args);
+
+   free(line);
+   free(args);
+ } while(status);
+
+   signal(SIGINT, SIG_IGN);
+   signal(SIGTERM, SIG_IGN);
+   signal(SIGTTIN, SIG_IGN);
+   signal(SIGTTOU, SIG_IGN);
+   signal(SIGTSTP, SIG_IGN);
+   signal(SIGQUIT, SIG_IGN);
+
+   // 1. parse() the command line
+   // 2. match "&" with backgrouding
+   // 3. backgrounding()
+
+
+  return 0;
+} // main()
+
+/******************************************/ //MAIN ENDS
