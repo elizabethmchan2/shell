@@ -3,26 +3,24 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
-
+#include <sys/types.h>
 
 // declare linked-list
-struct Node {
+struct node {
   JOB job;
   struct Node *next;
-};
+} Node;
 
 typedef struct job {
-  pid_t job_id; //pid of process
+  pid_t job_id; // pid of process
   char* name_id;
-  int status;
+  int fg_bg;
+  //int status;
 } JOB;
 
-struct Node* head; //global head
-
-// void init_linkedlist(){
-//   struct Node* head = NULL;
-//   struct Node* last = NULL;
-// }
+void s_handler(int signal, siginfo_t *info, void * t);
+JOB create_job();
+void backgrounding();
 
 int main(){
   signal(SIGINT, SIG_IGN);
@@ -32,93 +30,87 @@ int main(){
   signal(SIGTSTP, SIG_IGN);
   signal(SIGQUIT, SIG_IGN);
 
-  // parse() the command line
-  // match the right command with the right function
-    // if backgrounding, call backgrounding()
+  // 1. parse() the command line
+  // 2. match "&" with backgrouding
+  // 3. backgrounding()
 
-  // add_job();
   return 0;
 } // main()
 
-void signal_handler(){
-  printf("%d\n", job_id);
-  printf("Stopped       %s\n", name_id); //the name of the process child that stoppedstruct Node* last = NULL;
+
+// !TEST THIS
+void s_handler(int signal, siginfo_t *info, void * t){
+  pid_t child_id = sig_info->si.pid;
+  printf("Stopped       %s\n", child_id);
 } // signal_handler()
 
+JOB create_job(pid_t jobID, char* nameID) {
+   JOB j;
+   j.job_id = jobID;
+   j.name_id = nameID;
+   //j.status = ?
+   return j;
+} //create_job()
 
-void backgrounding(){ // what does backgrounding takes in ?
+void backgrounding(){ //! what does backgrounding takes in ?
   pid_t pid;
   pid_t pgid;
+  JOB j;
 
   pid = fork();
-  if (pid == 0){ //child
-   signal(SIGINT, SIG_DFL);
-   signal(SIGTERM, SIG_DFL);
-   signal(SIGTTIN, SIG_DFL);
-   signal(SIGTTOU, SIG_DFL);
-   signal(SIGTSTP, SIG_DFL);
-   signal(SIGQUIT, SIG_DFL);
 
-   // setpgid(0,0); // create a new process group
-                  // pgid? of child process => getppid()?
-    JOB j;
-    j = create_job(getpid(), char* nameID, 0);
-    struct Node* last = NULL;
-    append(&last, j);
+  // 2a. PARENT PROCESS
+  if (pid > 0){
+    // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
+    // 0. create_job()
+    j = create_job(pid, argc[0]); //! Check with Lizzy, argc[0] might be declared in her program
 
+    // block();
+    // 1. ! add_job() to linked list
+    // unblock();
 
- } // if
-  else if (pid > 0){ //parent
+    // 2. Handle SIGCHLD
+    struct sigaction sa;
+    sa.sa_sigaction= (void*)s_handler;
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigaction(SIGCHLD,&sa, NULL);
 
-    // somehow have to get the child process pid for first parameter
-    // setpgid(child process' pid,);
-    struct Node* check_node = head;
-    while (check_node != NULL)
-    {
-        //printf("%d\n", node->job.job_id);
-      if (check_node->job.job_id!=pid)  {
-      //struct Node *start = NULL;
-        JOB j;
-        j = create_job(getpid(), char* nameID, 0);
-        struct Node* last = NULL;
-        append(&last, j);
-    }
-      check_node = check_node->next;
-  }
+    /* 3. ! Handle concurrency with linked-list updating
+        . block() and unblock() wrapping around the critical region : updating the linked-list :
 
-  } // else if
-  else {
-    printf("Error forking\n");
-  } // else
+        block()
+        update the list
+        unblock()
 
-  // add child to the job linked-list
-  // run, exec()?
-  // when child process stops, register SIGCHLD, signal_handler with sigaction()
+    */
+  } //if
 
-  pid_t pid;
-  pid = fork();
-  struct sigaction act;
+  // 2b. CHILD PROCESS
+  else if (pid == 0){ // CHILD PROCESS
+    /*1. Set signums back to default */
+     signal(SIGINT, SIG_DFL);
+     signal(SIGTERM, SIG_DFL);
+     signal(SIGTTIN, SIG_DFL);
+     signal(SIGTTOU, SIG_DFL);
+     signal(SIGTSTP, SIG_DFL);
+     signal(SIGQUIT, SIG_DFL);
 
-  memset(&act, '/0', sizeof(act));
+     /*2. setpgid(0,0);
+          a. create a new process group
+        (?) pgid? of child process => getppid()? */
 
-  if (pid < 0) { // Parent process
-    // if your child process is bg, continue to accept commands
-    // if (){ //struct job?
+    /*3. exec child*/
+    execvp(*tokens[0], *tokens[1]); // ! check if parameters are right,
+                                    //*token is declared as char **tokens
+  } // if
+  else {printf("Error forking\n");} // else
+} // backgrounding()
 
-    act.sa_sigaction = &signal_handler;
-    // print Stopped
-    sigaction(SIGCHLD, &act, NULL);
-    // add to job list
+void block(){
 
-    }
-    // else, wait()
-  }
-  else if (pid == 0){ //Child process
-    // execute command and arguments
-  }
-  else {
-    printf(Error forking.);
-  }
-} // execute()
+} //block()
+void unblock(){
+
+} //unblock()
 
 // ctrl - c
