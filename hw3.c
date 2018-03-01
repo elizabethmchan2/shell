@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <sys/types.h>
 
+void backgrounding();
 
 /******************************************/ //PARSING START
 
@@ -90,7 +91,7 @@ char **split_line(char *line){
   if (pch!=NULL) {
     while (pch!=NULL) {
       printf ("found at %ld\n",pch-line+1);
-      // backgrounding();
+      backgrounding();
       pch=strchr(pch+1,'&');
     }
   } else {
@@ -118,6 +119,8 @@ char **split_line(char *line){
   }
   tokens[position] = NULL;
   return tokens;
+
+  free(tokens);
 }
 
 //fork the child process and changes the running status (therefore changes while loop) if it does/doesn’t work
@@ -247,10 +250,17 @@ void deleteNode(struct Node **head_ref, pid_t job_id){
 /******************************************/ //BACKGROUNDING STARTS
 // !TEST THIS
 void s_handler(int signal, siginfo_t *info, void * t){
-  pid_t child_id = sig_info->si.pid;
+  pid_t child_id = info->si_pid;
   printf("Stopped       %s\n", child_id);
 } // signal_handler()
 
+void block(sigset_t sig){
+  sigprocmask(SIG_BLOCK,&sig,NULL);
+} //block()
+
+void unblock(sigset_t sig){
+  sigprocmask(SIG_UNBLOCK,&sig,NULL);
+} //unblock()
 
 void backgrounding(){ //! what does backgrounding takes in ?
   pid_t pid;
@@ -267,7 +277,7 @@ void backgrounding(){ //! what does backgrounding takes in ?
   if (pid > 0){
     // ? SHOULD 0. & 1. be inside of if (pid > 0) ?
     // 0. create_job()
-    j = create_job(pid, argc[0]); //! Check with Lizzy, argc[0] might be declared in her program
+    j = create_job(pid, "emacs"); //! Check with Lizzy, argc[0] might be declared in her program
 
 
     /* 2. ! Handle concurrency with linked-list updating
@@ -277,12 +287,13 @@ void backgrounding(){ //! what does backgrounding takes in ?
         unblock()
     */
 
-    block();
+    block(sig);
     // 1. ! add_job() to linked list
-    unblock();
+    unblock(sig);
 
     // 3. Handle SIGCHLD
     struct sigaction sa;
+    memset(&sa,0,sizeof(sa));
     sa.sa_sigaction= (void*)s_handler;
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
     sigaction(SIGCHLD,&sa, NULL);
@@ -309,19 +320,32 @@ void backgrounding(){ //! what does backgrounding takes in ?
     // ! check if parameters are right,
     // *token is declared as char **tokens
 
-    execvp("emacs", "hello.c");
+    //check if & exists first
+    char* line = "hello.c &";
+    int bufsize = MORE_BUFFER;
+    int position = 0;
+    char **tests = malloc(bufsize * sizeof(char*));
+    char *test;
+
+      if (!tests) {
+        fprintf(stderr, "error: allocation error\n");
+        exit(EXIT_FAILURE);
+      }
+
+      test = strtok(line, " \t\r\n\a");
+      while (test != NULL) {
+        tests[position] = test;
+        position++;
+        test = strtok(NULL, " \t\r\n\a");
+      }
+
+    execvp("emacs", tests);
+
+    free(tests);
 
   } // if
   else {printf("Error forking\n");} // else
-} // backgrounding()
-
-void block(){
-  sigprocmask(SIG_BLOCK,&sig,NULL);
-} //block()
-
-void unblock(){
-  sigprocmask(SIG_UNBLOCK,&sig,NULL);
-} //unblock()
+} //
 
 // ctrl - c
 /******************************************/ //BACKGROUNDING ENDS
